@@ -78,3 +78,18 @@ How a video folder plugs in (copy `engine/template/` to start a new video):
 
 Each video chooses and tunes one in `lighting/main.js`. Try another without editing:
 `node engine/render.mjs <video> --stills 2 --set light=glow-fog`
+
+### Combining presets in one video
+
+Set a `timeline` in the video's `lighting/main.js` to switch or crossfade between presets:
+
+```js
+export const timeline = [
+  [0,  'flat'],            // start with flat light
+  [8,  'key', 1.5],        // at 8s fade to key light over 1.5s
+  [20, 'glow-fog', 0],     // at 20s hard cut to glow + fog
+];
+```
+
+Light intensities, background, fog, bloom and glowing orbs all blend (`engine/lib/lighting/mix.js`).
+Set `timeline = null` to use a single preset for the whole video.
