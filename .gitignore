@@ -10,3 +10,4 @@
 .kokoro/
 preview.wav
 __pycache__/
+node_modules/

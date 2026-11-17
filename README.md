@@ -44,3 +44,25 @@ Write the narration in `<type>/<video>/script/voiceover.txt` (one line per sente
 blank line = scene break, `[pause 1.5]` = silence). Output goes to that video's
 `audio/voiceover.wav` and `audio/voiceover_timing.json` (per-line timing for syncing
 animation). Voices per type are set at the top of `audio_master.py`.
+
+## Rendering — three.js (`engine/`)
+
+Videos are rendered with three.js in headless Chrome, frame by frame, then encoded
+with ffmpeg (voiceover and `audio/music.*` are mixed in automatically).
+
+```
+cd engine && npm install && cd ..
+node engine/render.mjs what-if/earth-stopped-spinning --stills 0,5,10   # sample frames (PNG)
+node engine/render.mjs what-if/earth-stopped-spinning --preview         # quick half-res video
+node engine/render.mjs what-if/earth-stopped-spinning                   # final 1080x1920 30fps
+node engine/render.mjs what-if/earth-stopped-spinning --export-assets   # models -> .glb
+```
+
+How a video folder plugs in (copy `engine/template/` to start a new video):
+
+- `assets/models/<name>.js` exports `build(opts)` returning a model; `--export-assets`
+  saves it as `<name>.glb` (opens in Blender, Unity, Unreal, any three.js project)
+- `lighting/<preset>.js` exports `apply(scene, opts)` returning the lights
+- `scenes/main.js` exports `setup(ctx)` returning `{ scene, camera, duration, update(t) }`;
+  `ctx.timing` holds the voiceover line timings so animation can sync to narration
+- Shared low-poly helpers (flat materials, vertex jitter, easing) live in `engine/lib/lowpoly.js`
