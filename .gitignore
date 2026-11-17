@@ -1,0 +1,7 @@
+# Rendered videos stay local, never pushed
+*.mp4
+*.mov
+*.webm
+*.mkv
+*.avi
+*.gif

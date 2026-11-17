@@ -25,5 +25,5 @@ lighting/          lighting rigs and presets
 scenes/            scene files and render scripts
 script/            voiceover script and timing
 audio/             voiceover and music
-renders/           sample frames and final videos
+renders/           sample frames (video files are not pushed)
 ```
