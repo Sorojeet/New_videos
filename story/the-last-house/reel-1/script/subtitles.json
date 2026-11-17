@@ -1,0 +1,12 @@
+{
+  "enabled": true,
+  "font": "../assets/fonts/Jost-Medium.woff2",
+  "fontFamily": "Jost",
+  "weight": 500,
+  "size": 60,
+  "y": 0.69,
+  "maxWords": 5,
+  "color": "#ffffff",
+  "highlight": "#ffffff",
+  "outline": "rgba(20,20,30,0.35)"
+}

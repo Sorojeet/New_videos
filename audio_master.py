@@ -56,6 +56,8 @@ TYPE_DEFAULTS = {
 FALLBACK = {"voice": "af_heart", "speed": 1.0, "lang": "en-us"}
 
 VIDEO_OVERRIDES = {
+    # The Last House series: Michael, slightly slower for suspense
+    **{f"story/the-last-house/reel-{i}": {"voice": "am_michael", "speed": 0.94, "lang": "en-us"} for i in range(1, 6)},
     # "what-if/earth-stopped-spinning": {"voice": "am_adam", "speed": 1.05},
 }
 
@@ -86,7 +88,8 @@ def settings_for(video_rel):
 
 def find_videos(type_filter=None):
     videos = []
-    for script in sorted(ROOT.glob("*/*/script/voiceover.txt")):
+    scripts = sorted(set(ROOT.glob("*/*/script/voiceover.txt")) | set(ROOT.glob("*/*/*/script/voiceover.txt")))
+    for script in scripts:
         rel = script.parent.parent.relative_to(ROOT).as_posix()
         if type_filter and not rel.startswith(type_filter + "/"):
             continue

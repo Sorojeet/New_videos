@@ -1,0 +1,76 @@
+{
+  "video": "story/the-last-house/reel-1",
+  "voice": "am_michael",
+  "speed": 0.94,
+  "lang": "en-us",
+  "sample_rate": 24000,
+  "duration": 57.186,
+  "lines": [
+    {
+      "index": 1,
+      "text": "In a village surrounded by endless forests,",
+      "start": 1.2,
+      "end": 3.952
+    },
+    {
+      "index": 2,
+      "text": "there was a house that nobody had entered for fifty years.",
+      "start": 4.202,
+      "end": 7.85
+    },
+    {
+      "index": 3,
+      "text": "Every night, a light appeared in its upstairs window.",
+      "start": 13.0,
+      "end": 16.243
+    },
+    {
+      "index": 4,
+      "text": "The strange part was that the house had no electricity,",
+      "start": 20.5,
+      "end": 24.468
+    },
+    {
+      "index": 5,
+      "text": "no owner,",
+      "start": 24.718,
+      "end": 25.87
+    },
+    {
+      "index": 6,
+      "text": "and no connection to the outside world.",
+      "start": 26.12,
+      "end": 28.509
+    },
+    {
+      "index": 7,
+      "text": "One day, a young explorer decided to enter it.",
+      "start": 31.0,
+      "end": 34.136
+    },
+    {
+      "index": 8,
+      "text": "Inside, everything was covered in dust,",
+      "start": 38.0,
+      "end": 40.496
+    },
+    {
+      "index": 9,
+      "text": "except for a single photograph lying on a table.",
+      "start": 40.746,
+      "end": 43.967
+    },
+    {
+      "index": 10,
+      "text": "It showed the explorer standing in front of the same house.",
+      "start": 47.0,
+      "end": 50.264
+    },
+    {
+      "index": 11,
+      "text": "But the photograph was dated fifty years ago.",
+      "start": 53.6,
+      "end": 56.587
+    }
+  ]
+}
