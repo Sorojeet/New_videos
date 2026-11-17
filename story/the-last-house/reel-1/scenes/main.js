@@ -185,7 +185,9 @@ export async function setup(ctx) {
     village.userData.windowMat.emissiveIntensity = 0;
     hu.door.rotation.y = 0;
     ex.visible = false;
-    overlay.material.opacity = ease(span(t, 0.3, 1.5));
+    // Title shows over the opening, then fades out before the night shot
+    overlay.material.opacity = ease(span(t, 0.3, 1.5)) * (1 - ease(span(t, 10.8, 12.2)));
+    overlay.visible = overlay.material.opacity > 0.001;
 
     // ---------------------------------------------------------------- S1 aerial (dusk)
     if (t < 12.5) {
