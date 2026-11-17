@@ -7,6 +7,7 @@
 //       [0,  'flat'],              // at 0s: flat light
 //       [8,  'key', 1.5],          // at 8s: fade to key light over 1.5s
 //       [20, 'glow-fog', 0],       // at 20s: hard cut to glow + fog
+//       [30, { 'fill-rim': 0.8, 'glow-fog': 0.5 }, 1],   // blend two presets at once
 //     ],
 //   });
 //   // in update(t):  light.update(t)
@@ -33,6 +34,7 @@ export function mixLighting(scene, ctx, { presets, timeline = null }) {
     const bg = scene.background.clone();
     let fog = FOG[name] ?? 0;
     if (scene.fog && scene.fog.isFogExp2) fog = scene.fog.density;
+    if (presets[name]?.mixFog !== undefined) fog = presets[name].mixFog;   // per-video fog while mixing
     const lights = [];
     const glowMats = [];
     h.rig.traverse((o) => {
@@ -41,7 +43,7 @@ export function mixLighting(scene, ctx, { presets, timeline = null }) {
     });
     if (h.composer) {
       composer = h.composer;
-      const bloom = composer.passes.find((p) => p.strength !== undefined);
+      const bloom = composer.bloom;
       bloomBase = bloom.strength;
     }
     parts[name] = { handles: h, bg, fog, lights, glowMats };
@@ -51,7 +53,7 @@ export function mixLighting(scene, ctx, { presets, timeline = null }) {
   ctx.renderer.toneMapping = THREE.ACESFilmicToneMapping;
   ctx.renderer.toneMappingExposure = 1.05;
   scene.fog = new THREE.FogExp2(0x000000, 0);
-  const bloomPass = composer && composer.passes.find((p) => p.strength !== undefined);
+  const bloomPass = composer && composer.bloom;
 
   const set = (weights) => {
     const bg = new THREE.Color(0, 0, 0);
@@ -72,17 +74,21 @@ export function mixLighting(scene, ctx, { presets, timeline = null }) {
     ctx.renderer.toneMappingExposure = total ? exposure / total : 1;
   };
 
+  // A timeline target is a preset name or a weights object, e.g. { 'fill-rim': 0.8, 'glow-fog': 0.5 }
+  const asW = (x) => (typeof x === 'string' ? { [x]: 1 } : { ...x });
   const weightsAt = (t) => {
     if (!timeline || !timeline.length) return { [names[0]]: 1 };
-    let w = { [timeline[0][1]]: 1 };
+    let w = asW(timeline[0][1]);
     for (let i = 1; i < timeline.length; i++) {
-      const [start, name, fade = 1] = timeline[i];
+      const [start, target, fade = 1] = timeline[i];
       if (t < start) break;
-      const prev = timeline[i - 1][1];
       const k = fade > 0 ? Math.min(1, (t - start) / fade) : 1;
       const s = k * k * (3 - 2 * k);
-      w = { [prev]: 1 - s };
-      w[name] = (w[name] || 0) + s;
+      const from = w, to = asW(target);
+      w = {};
+      for (const n of new Set([...Object.keys(from), ...Object.keys(to)])) {
+        w[n] = (from[n] || 0) * (1 - s) + (to[n] || 0) * s;
+      }
     }
     return w;
   };

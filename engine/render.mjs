@@ -8,6 +8,7 @@
 //   node engine/render.mjs <type>/<video> --export-assets  assets/models/*.js -> .glb
 //   --set key=value   pass options to the scene (ctx.params), e.g. --set light=glow-fog
 //   --tag name        prefix for still file names
+//   audio/mix.json    optional {"musicVolume":0.22,"voiceVolume":1.0}
 //
 // Audio: audio/voiceover.wav and audio/music.(mp3|wav|m4a) are mixed in when present.
 import http from 'node:http';
@@ -40,7 +41,7 @@ const CHROME = process.env.CHROME_PATH || '/usr/bin/google-chrome';
 // --- static file server for the repo ---------------------------------------
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript',
   '.json': 'application/json', '.glb': 'model/gltf-binary', '.png': 'image/png',
-  '.jpg': 'image/jpeg', '.wav': 'audio/wav' };
+  '.jpg': 'image/jpeg', '.wav': 'audio/wav', '.woff2': 'font/woff2' };
 const server = http.createServer((req, res) => {
   const p = path.join(ROOT, decodeURIComponent(new URL(req.url, 'http://x').pathname));
   if (!p.startsWith(ROOT) || !fs.existsSync(p) || fs.statSync(p).isDirectory()) {
@@ -116,13 +117,16 @@ const ff = ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String
 const inputs = [];
 if (fs.existsSync(vo)) { ff.push('-ss', String(from), '-i', vo); inputs.push('vo'); }
 if (music) { ff.push('-ss', String(from), '-i', music); inputs.push('music'); }
+// Optional audio/mix.json: { "musicVolume": 0.22, "voiceVolume": 1.0 }
+let mixCfg = { musicVolume: 0.22, voiceVolume: 1.0 };
+try { mixCfg = { ...mixCfg, ...JSON.parse(fs.readFileSync(path.join(audioDir, 'mix.json'), 'utf8')) }; } catch {}
 if (inputs.length === 2) {
-  ff.push('-filter_complex', '[2:a]volume=0.22[m];[1:a][m]amix=inputs=2:duration=longest:normalize=0[a]',
+  ff.push('-filter_complex', `[1:a]volume=${mixCfg.voiceVolume}[v];[2:a]volume=${mixCfg.musicVolume}[m];[v][m]amix=inputs=2:duration=longest:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=11[a]`,
     '-map', '0:v', '-map', '[a]');
 } else if (inputs.length === 1) {
-  ff.push('-map', '0:v', '-map', '1:a');
+  ff.push('-filter_complex', '[1:a]loudnorm=I=-14:TP=-1.5:LRA=11[a]', '-map', '0:v', '-map', '[a]');
 }
-if (inputs.length) ff.push('-c:a', 'aac', '-b:a', '192k');
+if (inputs.length) ff.push('-c:a', 'aac', '-b:a', '192k', '-ar', '48000');
 ff.push('-t', String(to - from), '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '18',
   '-pix_fmt', 'yuv420p', '-movflags', '+faststart', out);
 

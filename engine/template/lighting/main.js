@@ -33,7 +33,7 @@ export const timeline = [
 export function apply(scene, ctx) {
   const forced = ctx.params?.light;
   if (!forced && timeline) {
-    const used = [...new Set(timeline.map((e) => e[1]))];
+    const used = [...new Set(timeline.flatMap((e) => (typeof e[1] === 'string' ? [e[1]] : Object.keys(e[1]))))];
     const presets = Object.fromEntries(used.map((n) => [n, options[n] || {}]));
     return mixLighting(scene, ctx, { presets, timeline });
   }

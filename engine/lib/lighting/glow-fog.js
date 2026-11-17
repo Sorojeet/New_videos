@@ -2,10 +2,7 @@
 // and bloom so anything emissive (lava, lamps, beams, eyes) halos softly.
 // Best for: night, storms, lava, sci-fi, mysterious openings.
 import * as THREE from 'three';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { bloomComposer } from '../post.js';
 import { makeRig, sun, background } from './common.js';
 
 export const defaults = {
@@ -56,11 +53,5 @@ function addGlow(rig, { position = [0, 0, 0], color = '#ff8a3d', intensity = 6, 
 }
 
 function makeComposer(scene, ctx, b) {
-  const composer = new EffectComposer(ctx.renderer);
-  composer.setPixelRatio(1);
-  composer.setSize(ctx.width, ctx.height);
-  composer.addPass(new RenderPass(scene, ctx.camera));
-  composer.addPass(new UnrealBloomPass(new THREE.Vector2(ctx.width, ctx.height), b.strength, b.radius, b.threshold));
-  composer.addPass(new OutputPass());
-  return composer;
+  return bloomComposer(ctx, scene, ctx.camera, b);
 }

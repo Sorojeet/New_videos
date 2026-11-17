@@ -38,6 +38,7 @@ try {
   const ctx = {
     THREE, renderer, width: W, height: H, aspect: W / H, timing, params,   // params: from --set key=value
     rng,                                        // rng(seed) -> deterministic random()
+    base,                                       // URL of this video's folder, e.g. for fonts/textures
     load: (rel) => import(`${base}${rel}`),     // load a module from this video's folder
   };
 
@@ -59,6 +60,11 @@ try {
     const mod = await import(`${base}scenes/main.js`);
     const s = await mod.setup(ctx);
     window.__duration = s.duration ?? timing?.duration ?? 10;
+    // Warm-up: compile shaders / allocate render targets so the first real frame isn't black.
+    for (let i = 0; i < 2; i++) {
+      if (s.update) await s.update(0);
+      if (s.composer) s.composer.render(); else renderer.render(s.scene, s.camera);
+    }
     window.__renderFrame = async (t, fmt = 'jpeg') => {
       if (s.update) await s.update(t);
       if (s.composer) s.composer.render(); else renderer.render(s.scene, s.camera);

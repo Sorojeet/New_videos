@@ -17,6 +17,7 @@ Script format (script/voiceover.txt)
     One sentence or phrase per line; each line is timed separately.
     A blank line = scene break (adds SCENE_GAP seconds of silence).
     [pause 1.5]   on its own line adds that many seconds of silence.
+    [at 10]       the next line starts exactly at 10s (to sync narration with scenes).
     # comments    are ignored.
 
 Setup
@@ -55,6 +56,7 @@ TYPE_DEFAULTS = {
 FALLBACK = {"voice": "af_heart", "speed": 1.0, "lang": "en-us"}
 
 VIDEO_OVERRIDES = {
+    "story/the-star-in-the-garden": {"speed": 1.08},
     # "what-if/earth-stopped-spinning": {"voice": "am_adam", "speed": 1.05},
 }
 
@@ -105,8 +107,13 @@ def parse_script(text):
                 items.append(("gap", SCENE_GAP))
             continue
         m = re.fullmatch(r"\[pause\s+([\d.]+)\]", line, re.I)
+        a = re.fullmatch(r"\[at\s+([\d.]+)\]", line, re.I)
         if m:
             items.append(("gap", float(m.group(1))))
+        elif a:
+            while items and items[-1][0] == "gap":
+                items.pop()
+            items.append(("at", float(a.group(1))))
         else:
             items.append(("line", line))
     while items and items[-1][0] == "gap":
@@ -131,6 +138,14 @@ def render_video(kokoro, video_rel):
     t = HEAD_PAD
     prev_line = False
     for kind, value in items:
+        if kind == "at":
+            if t > value + 0.01:
+                print(f"  WARNING {video_rel}: narration runs {t - value:.2f}s past the [at {value}] marker")
+            else:
+                chunks.append(silence(value - t))
+                t = value
+            prev_line = False
+            continue
         if kind == "gap":
             chunks.append(silence(value))
             t += value
