@@ -1,0 +1,12 @@
+{
+  "enabled": true,
+  "font": "assets/fonts/Fredoka-SemiBold.woff2",
+  "fontFamily": "Fredoka",
+  "weight": 600,
+  "size": 64,
+  "y": 0.7,
+  "maxWords": 5,
+  "color": "#ffffff",
+  "highlight": "#ffd36a",
+  "outline": "#141a33"
+}

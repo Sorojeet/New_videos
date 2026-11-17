@@ -32,4 +32,5 @@ node engine/render.mjs story/the-star-in-the-garden --export-assets           # 
 - `lighting/main.js`: preset blend timeline + sky colours
 - `scenes/main.js`: all shots, animation and effects
 - `audio/music.py`: synthesized music bed, glass chime (34.6 s), lid pop (48.3 s), sting (56.2 s)
-- `audio/mix.json`: music level under the narration
+- `audio/mix.json`: music level + auto-ducking under the narration
+- `script/subtitles.json`: subtitle style (Fredoka, gold word highlight)

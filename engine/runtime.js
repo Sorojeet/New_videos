@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { rng } from 'engine/lowpoly.js';
+import { createSubtitles } from 'engine/subtitles.js';
 
 const q = new URLSearchParams(location.search);
 const video = q.get('video');
@@ -60,6 +61,13 @@ try {
     const mod = await import(`${base}scenes/main.js`);
     const s = await mod.setup(ctx);
     window.__duration = s.duration ?? timing?.duration ?? 10;
+    // Subtitles: on by default when there is a voiceover; --set subtitles=off disables.
+    let subs = null;
+    if (params.subtitles !== 'off' && s.subtitles !== false) {
+      let subCfg = {};
+      try { const r = await fetch(`${base}script/subtitles.json`); if (r.ok) subCfg = await r.json(); } catch {}
+      subs = await createSubtitles(ctx, timing, subCfg);
+    }
     // Warm-up: compile shaders / allocate render targets so the first real frame isn't black.
     for (let i = 0; i < 2; i++) {
       if (s.update) await s.update(0);
@@ -68,6 +76,7 @@ try {
     window.__renderFrame = async (t, fmt = 'jpeg') => {
       if (s.update) await s.update(t);
       if (s.composer) s.composer.render(); else renderer.render(s.scene, s.camera);
+      if (subs) subs.render(renderer, t);
       return fmt === 'png'
         ? renderer.domElement.toDataURL('image/png')
         : renderer.domElement.toDataURL('image/jpeg', 0.95);

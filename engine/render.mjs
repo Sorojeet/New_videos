@@ -8,7 +8,8 @@
 //   node engine/render.mjs <type>/<video> --export-assets  assets/models/*.js -> .glb
 //   --set key=value   pass options to the scene (ctx.params), e.g. --set light=glow-fog
 //   --tag name        prefix for still file names
-//   audio/mix.json    optional {"musicVolume":0.22,"voiceVolume":1.0}
+//   audio/mix.json    optional {"musicVolume":0.22,"voiceVolume":1.0,"duck":true}
+//   Subtitles are burned in from the voiceover timing (script/subtitles.json to style, --set subtitles=off to skip)
 //
 // Audio: audio/voiceover.wav and audio/music.(mp3|wav|m4a) are mixed in when present.
 import http from 'node:http';
@@ -117,11 +118,18 @@ const ff = ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String
 const inputs = [];
 if (fs.existsSync(vo)) { ff.push('-ss', String(from), '-i', vo); inputs.push('vo'); }
 if (music) { ff.push('-ss', String(from), '-i', music); inputs.push('music'); }
-// Optional audio/mix.json: { "musicVolume": 0.22, "voiceVolume": 1.0 }
-let mixCfg = { musicVolume: 0.22, voiceVolume: 1.0 };
+// Optional audio/mix.json: { "musicVolume": 0.22, "voiceVolume": 1.0, "duck": true, "duckAmount": 8 }
+// duck: music plays at musicVolume and automatically dips while the narration speaks.
+let mixCfg = { musicVolume: 0.22, voiceVolume: 1.0, duck: false, duckAmount: 4, duckThreshold: 0.04 };
 try { mixCfg = { ...mixCfg, ...JSON.parse(fs.readFileSync(path.join(audioDir, 'mix.json'), 'utf8')) }; } catch {}
 if (inputs.length === 2) {
-  ff.push('-filter_complex', `[1:a]volume=${mixCfg.voiceVolume}[v];[2:a]volume=${mixCfg.musicVolume}[m];[v][m]amix=inputs=2:duration=longest:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=11[a]`,
+  const fmt = 'aresample=48000,aformat=sample_rates=48000:channel_layouts=stereo';
+  const pad = `apad=whole_dur=${(to - from).toFixed(3)}`;   // keep the sidechain alive to the end
+  const music = mixCfg.duck
+    ? `[1:a]${fmt},${pad},volume=${mixCfg.voiceVolume},asplit=2[v][sc];[2:a]${fmt},volume=${mixCfg.musicVolume}[m0];` +
+      `[m0][sc]sidechaincompress=threshold=${mixCfg.duckThreshold}:ratio=${mixCfg.duckAmount}:attack=60:release=900:knee=4[m];`
+    : `[1:a]${fmt},${pad},volume=${mixCfg.voiceVolume}[v];[2:a]${fmt},volume=${mixCfg.musicVolume}[m];`;
+  ff.push('-filter_complex', `${music}[v][m]amix=inputs=2:duration=longest:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=11[a]`,
     '-map', '0:v', '-map', '[a]');
 } else if (inputs.length === 1) {
   ff.push('-filter_complex', '[1:a]loudnorm=I=-14:TP=-1.5:LRA=11[a]', '-map', '0:v', '-map', '[a]');

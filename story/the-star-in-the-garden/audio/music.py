@@ -5,7 +5,8 @@ Writes audio/music.wav (60 s, 48 kHz stereo). The renderer mixes it under the vo
 
   0-20s   soft magical: warm pad + music-box arpeggio (D major)
   20-32s  garden comes alive: brighter arps + shimmer, sparkle on touch (21.2s)
-  32-45s  warm & tender, GLASS CHIME as the jar closes (34.6s)
+  32-40s  warm & tender, GLASS CHIME as the jar closes (34.6s)
+  40-45s  lullaby: music-box melody for Leo's promise
   45-56s  midnight: minor, slow, low drone; lid pops (48.3s)
   56.2s   SUDDEN MYSTERIOUS STING, then an unresolved ringing chord to the end
 """
@@ -94,6 +95,9 @@ while t < 45.0:
     step = 0.5 if t < 20 or t >= 32 else 0.25            # busier when the garden comes alive
     k = 0
     while k * step < 3.0:
+        if 40.3 <= t + k * step < 45.0:                  # leave room for the lullaby
+            k += 1
+            continue
         note = arp[k % len(arp)] + (12 if (20 <= t < 32 and k % 4 == 3) else 0)
         add(music_box(note), t + k * step, pan=0.35 * np.sin(k), gain=0.22 if step == 0.5 else 0.15)
         k += 1
@@ -113,6 +117,14 @@ for k, note in enumerate([81, 85, 88, 90, 93, 97, 100, 102]):
 # GLASS CHIME: jar lid closes (34.6 s)
 add(chime(88, 4.5), 34.58, pan=0.1, gain=0.45)
 add(chime(95, 3.5), 34.61, pan=-0.1, gain=0.22)
+
+# ---- Lullaby (40.4-45 s): Leo's promise, music box solo over a warm swell --------------
+add(pad([50, 57, 61, 64, 69], 5.2, attack=1.4, release=1.6, bright=0.35), 40.2, gain=0.6)
+lullaby = [(81, 0.0), (78, 0.45), (81, 0.9), (86, 1.35), (85, 2.0), (83, 2.45), (81, 2.9), (78, 3.5), (79, 3.95), (76, 4.4)]
+for note, dt in lullaby:
+    add(music_box(note, 2.4), 40.5 + dt, pan=0.15, gain=0.32)
+    add(music_box(note - 12, 2.0), 40.5 + dt, pan=-0.15, gain=0.10)
+add(chime(93, 2.5), 41.55, pan=0.3, gain=0.12)        # twinkle as Leo blinks at the jar
 
 # ---- Midnight (45-56 s): B minor, slow, low drone -----------------------------------
 night = [[47, 54, 59, 62], [43, 50, 55, 59], [40, 47, 52, 55], [42, 49, 54, 58]]   # Bm, G, Em, F#

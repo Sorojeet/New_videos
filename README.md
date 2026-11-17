@@ -93,3 +93,12 @@ export const timeline = [
 
 Light intensities, background, fog, bloom and glowing orbs all blend (`engine/lib/lighting/mix.js`).
 Set `timeline = null` to use a single preset for the whole video.
+
+## Subtitles and audio mix
+
+- **Subtitles** are burned in automatically from the voiceover timing: short phrases,
+  with the word being spoken highlighted. Style per video in `script/subtitles.json`
+  (font, size, position, colours); skip with `--set subtitles=off`.
+- **Music ducking**: with `"duck": true` in `audio/mix.json`, music plays at `musicVolume`
+  and dips automatically while the narration speaks, so pauses never go silent.
+  Final audio is loudness-normalised to -14 LUFS.
