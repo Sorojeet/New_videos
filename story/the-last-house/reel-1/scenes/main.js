@@ -92,6 +92,12 @@ export async function setup(ctx) {
   const interior = intM.build({});
   room.add(interior);
   const iu = interior.userData;
+  // Where he stands at the table, which way he faces, and where the photograph lies (table centre)
+  const toTable = V(0.38, 0, -0.92).normalize();
+  const STAND = iu.tableTop.clone().setY(0).sub(toTable.clone().multiplyScalar(0.74));
+  const FACE = Math.atan2(toTable.x, toTable.z);
+  const PHOTO_SPOT = iu.tableTop.clone().add(toTable.clone().multiplyScalar(-0.06)).add(V(0, 0.001, 0));
+  const HANDCAM = iu.tableTop.clone().add(toTable.clone().multiplyScalar(0.75)).add(V(0.25, 0.5, 0));
   // dust motes
   const DM = 500, dPos = new Float32Array(DM * 3), dBase = [];
   const r = rng(7);
@@ -198,7 +204,7 @@ export async function setup(ctx) {
       hu.glowMat.emissiveIntensity = 2.4 * on * flick;
       winLight.intensity = 4 * on * flick;
       const k = easeInOut(span(t, 12.5, 20));
-      look(vl(V(-4.2, 0.55, 15.5), V(-2.9, 1.5, 11.0), k), vl(V(-1.2, 3.2, 0), V(-1.6, 4.2, 2.3), k));
+      look(vl(V(-4.2, 0.6, 16.5), V(-2.8, 1.9, 12.6), k), vl(V(-1.2, 3.2, 0), V(-1.6, 4.1, 2.3), k));
     }
     // ---------------------------------------------------------------- S3 no connection (night)
     else if (t < 31) {
@@ -227,68 +233,81 @@ export async function setup(ctx) {
         exM.pose(ex, { walk: w.phase, walkAmount: w.amount, look: [0, 0.18], mouth: 'neutral' });
         const p = ex.position;
         look(V(p.x + 1.5, 2.0, p.z + 4.2), V(p.x - 0.1, 1.55, p.z - 2.5));
-      } else {
-        const w = walk(V(-0.47, 0, 6.6), V(-0.47, 0, 3.05), 34.6, 36.4, t);
+      } else if (t < 36.3) {                 // walks up the steps to the door
+        const w = walk(V(-0.47, 0, 6.6), V(-0.47, 0, 3.05), 34.6, 36.3, t);
         ex.position.y = porchY(ex.position.z);
-        const push = ease(span(t, 36.2, 36.9));
-        exM.pose(ex, { walk: w.phase, walkAmount: w.amount, push, look: [0, 0.05], mouth: 'neutral', brows: push * 0.5 });
-        hu.door.rotation.y = -1.25 * easeInOut(span(t, 36.5, 37.9));     // swings inward
-        const k = easeInOut(span(t, 34.6, 38));
-        look(vl(V(2.3, 1.55, 3.5), V(2.0, 1.5, 3.3), k), vl(V(-0.3, 1.35, 3.0), V(-0.6, 1.3, 2.5), k));
+        exM.pose(ex, { walk: w.phase, walkAmount: w.amount, look: [0, 0.05], mouth: 'neutral' });
+        look(vl(V(1.8, 1.8, 9.4), V(1.5, 1.7, 8.6), span(t, 34.6, 36.3)), V(-0.45, 1.2, ex.position.z - 0.5));
+      } else {                               // from inside: the door creaks open, he stands against the light
+        setEnv('inside');
+        ext.visible = false; room.visible = true; photo.visible = false;
+        ex.position.set(0, 0, 3.75); ex.rotation.y = Math.PI;
+        const push = ease(span(t, 36.3, 36.9));
+        exM.pose(ex, { push, look: [0, -0.05], gaze: [0, 0], mouth: 'neutral', brows: 0.4 });
+        iu.door.rotation.y = 1.75 * easeInOut(span(t, 36.5, 37.9));
+        const k = easeInOut(span(t, 36.3, 38));
+        look(vl(V(1.45, 1.4, -0.9), V(1.2, 1.4, -0.4), k), V(0.0, 1.25, 3.0));
       }
     }
     // ---------------------------------------------------------------- S5 inside
     else if (t < 47) {
       setEnv('inside');
       ext.visible = false; room.visible = true; ex.visible = true;
-      iu.door.rotation.y = -1.25;
+      iu.door.rotation.y = 1.75;
       photo.visible = true;
-      photo.position.copy(iu.tableTop).add(V(-0.12, 0.001, 0.3));
+      photo.position.copy(PHOTO_SPOT);
       photo.rotation.set(-Math.PI / 2, 0, 0.35);
       if (t < 42.5) {
-        const w = walk(V(-0.47, 0, 3.6), V(-0.08, 0, 1.12), 38.2, 41.6, t);
+        const w = walk(V(0.0, 0, 3.7), STAND, 38.2, 41.6, t);
         exM.pose(ex, { walk: w.phase, walkAmount: w.amount, aim: 0.85, torchOn: true, look: [0.25 * Math.sin(t * 0.8), 0.1], mouth: 'neutral' });
         const k = easeInOut(span(t, 38, 42.5));
         look(vl(V(1.9, 2.3, -1.6), V(1.5, 2.0, -1.1), k), vl(V(-0.45, 1.3, 2.8), V(-0.3, 1.1, 1.6), k));
       } else {
-        ex.position.set(-0.08, 0, 1.12); ex.rotation.y = Math.atan2(0.38, -0.92);
+        ex.position.copy(STAND); ex.rotation.y = FACE;
         exM.pose(ex, { aim: 0.85, torchOn: true, look: [0, -0.35], mouth: 'neutral', gaze: [0, -0.6] });
         const k = easeInOut(span(t, 42.5, 47));
-        look(vl(V(1.9, 1.6, 2.0), V(1.0, 1.15, 0.95), k), iu.tableTop.clone().add(V(-0.1, 0.05, 0.03)));
+        const far = iu.tableTop.clone().setY(0).add(toTable.clone().multiplyScalar(2.3)).add(V(0.35, 1.75, 0));
+        const near = iu.tableTop.clone().setY(0).add(toTable.clone().multiplyScalar(1.05)).add(V(0.12, 1.3, 0));
+        look(vl(far, near, k), vl(PHOTO_SPOT.clone().add(toTable.clone().multiplyScalar(-0.35)).add(V(0, 0.35, 0)), PHOTO_SPOT.clone().add(V(0, 0.03, 0)), k));
       }
-      torchLight.intensity = 6;
+      torchLight.intensity = t < 42.5 ? 6 : 3.5;
     }
     // ---------------------------------------------------------------- S6 the photograph
     else {
       setEnv('inside');
       ext.visible = false; room.visible = true; ex.visible = true; photo.visible = true;
-      iu.door.rotation.y = -1.25;
-      ex.position.set(-0.08, 0, 1.12); ex.rotation.y = Math.atan2(0.38, -0.92);
-      torchLight.intensity = 5;
-      const lift = ease(span(t, 47.2, 48.6));
-      const hold = ease(span(t, 48.2, 49.0));
-      exM.pose(ex, { reach: (1 - hold) * (Math.sin(Math.min(1, lift * 1.6) * Math.PI / 2) * 1.25), hold, aim: 0, torchOn: false,
+      iu.door.rotation.y = 1.75;
+      ex.position.copy(STAND); ex.rotation.y = FACE;
+      torchLight.intensity = 2.5;
+      const lift = ease(span(t, 47.0, 47.7)) * (1 - ease(span(t, 47.95, 48.55)));
+      const hold = ease(span(t, 47.95, 48.6));
+      exM.pose(ex, { pick: lift, hold, aim: 0, torchOn: false,
         look: [0, -0.35 + hold * 0.2], gaze: [0, -0.5], mouth: t > 57 ? 'open' : 'neutral', brows: t > 54.2 ? 1 : 0.2 });
-      torchLight.intensity = 5;
-      // photo path: table -> hand -> held in front of his face
+      torchLight.intensity = 2.5;
+      // photo path: lies on the table -> grabbed by the left hand -> raised in front of his face
+      exM.aimArm(ex, 'L', PHOTO_SPOT.clone().add(V(0, 0.075, 0)), lift);
       ex.updateMatrixWorld(true);
       const fwd = V(0, 0, 1).applyQuaternion(ex.quaternion);
       const heldPos = ex.position.clone().add(fwd.clone().multiplyScalar(0.42)).add(V(0, 1.42, 0));
-      const tablePos = iu.tableTop.clone().add(V(-0.12, 0.001, 0.3));
-      photo.position.copy(vl(tablePos, heldPos, ease(span(t, 47.7, 48.9))));
+      const tablePos = PHOTO_SPOT.clone();
+      const hand = ex.userData.arms.L.userData.hand.getWorldPosition(V(0, 0, 0)).add(V(0, -0.075, 0));
+      const grab = ease(span(t, 47.65, 47.95));
+      const toFace = ease(span(t, 48.45, 48.75));
+      photo.position.copy(vl(vl(tablePos, hand, grab), heldPos, toFace));
       const faceQ = new THREE.Quaternion().setFromRotationMatrix(m4.lookAt(heldPos, ex.position.clone().add(V(0, 1.58, 0)), V(0, 1, 0)));
       const flatQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0.35));
-      // facing the camera side: the image faces away from him (toward us), he sees... we show the image
       const outQ = faceQ.clone().multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), Math.PI));
       const flip = easeInOut(span(t, 54.0, 54.7));
       const showQ = outQ.clone().multiply(new THREE.Quaternion().setFromAxisAngle(V(0, 1, 0), Math.PI * flip));
-      photo.quaternion.copy(flatQ).slerp(showQ, ease(span(t, 48.6, 49.3)));
+      photo.quaternion.copy(flatQ).slerp(showQ, ease(span(t, 48.7, 49.3)));
       const pn = V(0, 0, 1).applyQuaternion(outQ);       // image normal (toward the viewer)
-      if (t < 48.6) {                      // close-up: hand lifts the photo off the table
-        const k = easeInOut(span(t, 47, 48.6));
-        look(vl(V(1.25, 1.25, -0.35), V(1.1, 1.4, -0.2), k), vl(tablePos.clone().add(V(-0.1, 0.1, 0.2)), heldPos.clone().add(V(0, -0.1, 0)), k));
+      const side = V(toTable.z, 0, -toTable.x);
+      if (t < 48.7) {                      // low insert at table level: his hand comes down and takes the photo
+        const k = easeInOut(span(t, 47, 48.7));
+        look(tablePos.clone().add(toTable.clone().multiplyScalar(2.0)).add(side.clone().multiplyScalar(0.45)).add(V(0, 0.5 + k * 0.1, 0)),
+          tablePos.clone().add(toTable.clone().multiplyScalar(-0.35)).add(V(0, 0.32 + k * 0.2, 0)));
       } else if (t < 57.0) {               // the photograph fills the frame (then flips to the date)
-        const k = easeInOut(span(t, 48.6, 57));
+        const k = easeInOut(span(t, 48.7, 57));
         look(photo.position.clone().add(pn.clone().multiplyScalar(lerp(0.36, 0.26, k))).add(V(0, 0.005, 0)), photo.position);
       } else {                              // his face: shock
         const k = easeInOut(span(t, 57, 60));

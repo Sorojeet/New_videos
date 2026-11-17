@@ -160,21 +160,21 @@ export function build({ age = 0, flashlight = true } = {}) {
 // p: { walk (phase), walkAmount 0..1, aim 0..1 (flashlight forward), hold 0..1 (photo at chest),
 //      reach 0..1 (right hand reaches down/forward), push 0..1 (left arm pushes door),
 //      look [yaw, pitch] head turn, gaze [x, y] eyes (-1..1), blink 0..1, mouth 'smile'|'neutral'|'open',
-//      brows 0 (calm) .. 1 (worried/raised), torchOn }
+//      brows 0 (calm) .. 1 (worried/raised), torchOn, pick 0..1 (bend, left hand reaches down to a table) }
 export function pose(ex, p = {}) {
   const u = ex.userData;
   const w = p.walk ?? 0, wa = p.walkAmount ?? 0;
-  const aim = p.aim ?? 0, hold = p.hold ?? 0, reach = p.reach ?? 0, push = p.push ?? 0;
+  const aim = p.aim ?? 0, hold = p.hold ?? 0, reach = p.reach ?? 0, push = p.push ?? 0, pick = p.pick ?? 0;
   const sw = Math.sin(w) * wa;
   u.legs.L.rotation.x = sw * 0.55;
   u.legs.R.rotation.x = -sw * 0.55;
   u.body.position.y = Math.abs(Math.cos(w)) * 0.025 * wa;
-  u.torso.rotation.set(0.03 * wa + reach * 0.3 + (u.age ? 0.18 : 0), 0, 0);
+  u.torso.rotation.set(0.03 * wa + reach * 0.3 + pick * 0.75 + (u.age ? 0.18 : 0), 0, 0);
   const R = u.arms.R, L = u.arms.L;
-  R.rotation.set(-sw * 0.6 * (1 - Math.max(aim, hold, reach)) - aim * 1.45 - hold * 1.15 - reach * 1.0, 0, -0.05 + hold * 0.45);
-  L.rotation.set(sw * 0.6 * (1 - Math.max(push, hold)) - push * 1.45 - hold * 1.15, 0, 0.05 - hold * 0.45);
+  R.rotation.set(-sw * 0.6 * (1 - Math.max(aim, hold, reach, pick)) - aim * 1.45 - hold * 1.15 - reach * 1.0 + pick * 0.35, 0, -0.05 + hold * 0.45);
+  L.rotation.set(sw * 0.6 * (1 - Math.max(push, hold, pick)) - push * 1.45 - hold * 1.15 - pick * 0.33, 0, 0.05 - hold * 0.45 - pick * 0.12);
   const look = p.look || [0, 0];
-  u.head.rotation.set(look[1] + (u.age ? 0.12 : 0), look[0], p.tilt ?? 0);
+  u.head.rotation.set(look[1] + (u.age ? 0.12 : 0) + pick * 0.25, look[0], p.tilt ?? 0);
   const gaze = p.gaze || [0, 0];
   const blink = p.blink ?? 0, brows = p.brows ?? 0;
   for (const e of u.eyes) {
@@ -189,4 +189,18 @@ export function pose(ex, p = {}) {
   const mouth = p.mouth || 'neutral';
   for (const [k, m] of Object.entries(u.mouths)) m.visible = k === mouth;
   if (u.torch) u.torch.userData.lens.material.emissiveIntensity = p.torchOn ? 4 : 0;
+}
+
+// Point an arm's hand at a world position (simple IK), blended by amount 0..1.
+export function aimArm(ex, side, target, amount = 1) {
+  if (amount <= 0) return;
+  const arm = ex.userData.arms[side];
+  ex.updateMatrixWorld(true);
+  const sh = arm.getWorldPosition(new THREE.Vector3());
+  const dirW = target.clone().sub(sh).normalize();
+  const parentQ = arm.parent.getWorldQuaternion(new THREE.Quaternion()).invert();
+  const dirL = dirW.applyQuaternion(parentQ);
+  const aimQ = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, -1, 0), dirL);
+  arm.quaternion.slerp(aimQ, amount);
+  ex.updateMatrixWorld(true);
 }
