@@ -56,7 +56,6 @@ TYPE_DEFAULTS = {
 FALLBACK = {"voice": "af_heart", "speed": 1.0, "lang": "en-us"}
 
 VIDEO_OVERRIDES = {
-    "story/the-star-in-the-garden": {"speed": 1.08},
     # "what-if/earth-stopped-spinning": {"voice": "am_adam", "speed": 1.05},
 }
 
