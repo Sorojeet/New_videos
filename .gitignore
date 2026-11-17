@@ -13,5 +13,5 @@ __pycache__/
 node_modules/
 
 # Generated audio (rebuild with audio_master.py and each video's audio/music.py)
-*/*/audio/*.wav
-*/*/audio/*_timing.json
+**/audio/*.wav
+**/audio/*_timing.json
