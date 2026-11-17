@@ -5,3 +5,8 @@
 *.mkv
 *.avi
 *.gif
+
+# Kokoro model files (auto-downloaded) and voice previews
+.kokoro/
+preview.wav
+__pycache__/

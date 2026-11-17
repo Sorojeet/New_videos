@@ -27,3 +27,20 @@ script/            voiceover script and timing
 audio/             voiceover and music
 renders/           sample frames (video files are not pushed)
 ```
+
+## Voiceovers — `audio_master.py`
+
+One master script generates every voiceover with Kokoro TTS.
+
+```
+pip install kokoro-onnx soundfile
+python audio_master.py                                  # all videos
+python audio_master.py what-if/earth-stopped-spinning   # one video
+python audio_master.py --type story                     # one type
+python audio_master.py --voices                         # list voices
+```
+
+Write the narration in `<type>/<video>/script/voiceover.txt` (one line per sentence,
+blank line = scene break, `[pause 1.5]` = silence). Output goes to that video's
+`audio/voiceover.wav` and `audio/voiceover_timing.json` (per-line timing for syncing
+animation). Voices per type are set at the top of `audio_master.py`.
