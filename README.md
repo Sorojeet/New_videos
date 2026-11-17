@@ -1,14 +1,20 @@
 # New Videos — Low-Poly Motion Graphics
 
 Vertical 9:16, 30–60s low-poly videos with AI voiceover and music.
-Each video lives in its own folder and keeps all of its own assets.
+Videos are grouped into folders by type; each video has its own folder inside its type.
 
-| Folder | Video | Type |
-|---|---|---|
-| `01-what-if-earth-stopped-spinning/` | What if Earth stopped spinning? | What-if simulation |
-| `02-how-a-volcano-erupts/` | How a volcano erupts | Science explainer |
-| `03-the-lighthouse-keeper/` | The lighthouse keeper | Story |
-| `04-lowpoly-planet-loop/` | Low-poly planet loop | Abstract loop |
+```
+what-if/
+  earth-stopped-spinning/
+explanatory/
+  how-a-volcano-erupts/
+story/
+  the-lighthouse-keeper/
+abstract-loop/
+  lowpoly-planet-loop/
+```
+
+New videos go into the matching type folder, e.g. `what-if/<new-video>/`.
 
 ## Inside each video folder
 
