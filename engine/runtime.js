@@ -34,8 +34,9 @@ try {
     if (r.ok) timing = await r.json();
   } catch {}
 
+  const params = Object.fromEntries([...q.entries()].filter(([k]) => k.startsWith('p_')).map(([k, v]) => [k.slice(2), v]));
   const ctx = {
-    THREE, renderer, width: W, height: H, aspect: W / H, timing,
+    THREE, renderer, width: W, height: H, aspect: W / H, timing, params,   // params: from --set key=value
     rng,                                        // rng(seed) -> deterministic random()
     load: (rel) => import(`${base}${rel}`),     // load a module from this video's folder
   };
@@ -60,7 +61,7 @@ try {
     window.__duration = s.duration ?? timing?.duration ?? 10;
     window.__renderFrame = async (t, fmt = 'jpeg') => {
       if (s.update) await s.update(t);
-      renderer.render(s.scene, s.camera);
+      if (s.composer) s.composer.render(); else renderer.render(s.scene, s.camera);
       return fmt === 'png'
         ? renderer.domElement.toDataURL('image/png')
         : renderer.domElement.toDataURL('image/jpeg', 0.95);

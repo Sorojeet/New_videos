@@ -7,8 +7,9 @@ export async function setup(ctx) {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(35, ctx.aspect, 0.1, 100);
 
-  const { apply } = await ctx.load('lighting/studio.js');
-  const light = apply(scene);
+  // Lighting from this video's lighting/main.js (override with --set light=<preset>)
+  const { apply } = await ctx.load('lighting/main.js');
+  const light = apply(scene, { ...ctx, camera });
 
   const { build } = await ctx.load('assets/models/planet.js');
   const planet = build({ seed: 7 });
@@ -19,13 +20,18 @@ export async function setup(ctx) {
 
   return {
     scene, camera, duration,
+    composer: light.composer,          // set by glow-fog (bloom); null otherwise
     update(t) {
       planet.rotation.y = t * 0.35;
       planet.rotation.x = 0.25;
       const p = easeInOut(span(t, 0, duration));
       camera.position.set(0, lerp(0.6, 0.2, p), lerp(9.5, 7.5, p));
       camera.lookAt(0, 0, 0);
-      light.key.intensity = 3.0;
+      // Glows orbit the planet
+      (light.glows || []).forEach((g, i) => {
+        const a = t * 0.6 + i * Math.PI;
+        g.position.set(Math.cos(a) * 1.7, 0.6 - i * 1.1, Math.sin(a) * 1.7);
+      });
     },
   };
 }

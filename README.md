@@ -62,7 +62,19 @@ How a video folder plugs in (copy `engine/template/` to start a new video):
 
 - `assets/models/<name>.js` exports `build(opts)` returning a model; `--export-assets`
   saves it as `<name>.glb` (opens in Blender, Unity, Unreal, any three.js project)
-- `lighting/<preset>.js` exports `apply(scene, opts)` returning the lights
+- `lighting/main.js` picks one of the shared lighting presets and tunes it for that video
 - `scenes/main.js` exports `setup(ctx)` returning `{ scene, camera, duration, update(t) }`;
   `ctx.timing` holds the voiceover line timings so animation can sync to narration
 - Shared low-poly helpers (flat materials, vertex jitter, easing) live in `engine/lib/lowpoly.js`
+
+## Lighting presets (`engine/lib/lighting/`)
+
+| Preset | Look | Good for |
+|---|---|---|
+| `flat` | Even, shadowless, true colours | Infographics, explainers, clean loops |
+| `key` | One strong sun, hard shadows, dark ambient | Day/night sides, reveals, hero objects |
+| `fill-rim` | Warm key + soft cool fill + bright rim outline | Characters, story scenes |
+| `glow-fog` | Dark fog, moonlight, glowing lights + bloom | Night, storms, lava, sci-fi |
+
+Each video chooses and tunes one in `lighting/main.js`. Try another without editing:
+`node engine/render.mjs <video> --stills 2 --set light=glow-fog`

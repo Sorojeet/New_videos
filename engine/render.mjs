@@ -6,6 +6,8 @@
 //   node engine/render.mjs <type>/<video> --stills 0,5,12  PNG frames at these seconds
 //   node engine/render.mjs <type>/<video> --from 4 --to 9  render only part of the video
 //   node engine/render.mjs <type>/<video> --export-assets  assets/models/*.js -> .glb
+//   --set key=value   pass options to the scene (ctx.params), e.g. --set light=glow-fog
+//   --tag name        prefix for still file names
 //
 // Audio: audio/voiceover.wav and audio/music.(mp3|wav|m4a) are mixed in when present.
 import http from 'node:http';
@@ -62,8 +64,11 @@ page.on('console', (m) => { if (m.type() === 'error' && !m.text().includes('404'
 page.on('pageerror', (e) => console.error('[page]', e.message));
 await page.setViewport({ width: W, height: H });
 
+// --set key=value (repeatable) -> ctx.params in the scene, e.g. --set light=glow-fog
+const sets = args.flatMap((a, i) => (a === '--set' && args[i + 1] ? [args[i + 1]] : []))
+  .map((kv) => kv.split('=')).map(([k, v]) => `&p_${encodeURIComponent(k)}=${encodeURIComponent(v ?? '')}`).join('');
 const mode = opt('export-assets', false) ? 'assets' : 'render';
-await page.goto(`http://127.0.0.1:${PORT}/engine/runtime.html?video=${encodeURIComponent(video)}&w=${W}&h=${H}&mode=${mode}`);
+await page.goto(`http://127.0.0.1:${PORT}/engine/runtime.html?video=${encodeURIComponent(video)}&w=${W}&h=${H}&mode=${mode}${sets}`);
 await page.waitForFunction('window.__ready || window.__error', { timeout: 120000 });
 const err = await page.evaluate('window.__error');
 if (err) { console.error(err); await shutdown(1); }
@@ -90,7 +95,8 @@ if (stills) {
   const times = String(stills).split(',').map(Number);
   for (const t of times) {
     const data = await page.evaluate((tt) => window.__renderFrame(tt, 'png'), t);
-    const file = path.join(outDir, `still_${String(t.toFixed(2)).replace('.', '_')}s.png`);
+    const tag = opt('tag', null);
+    const file = path.join(outDir, `still_${tag ? tag + '_' : ''}${String(t.toFixed(2)).replace('.', '_')}s.png`);
     fs.writeFileSync(file, decode(data));
     console.log('wrote', path.relative(ROOT, file));
   }
